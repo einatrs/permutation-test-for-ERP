@@ -1,0 +1,444 @@
+---
+title: "Permutation Tests"
+output: html_document
+---
+In the permutation test, positive values from BVA for same time-windows were extracted,  corresponding to the area of ipsi-contra rather than contra-ipsi. These values are  transformed to the negative (*-1) and combined with original samples to a combined 42 or 34 negative values, respective of experiment. Then, 100k samples size 21 or 17 (depending on the experiment) are drawn from the combined pools. If left/right position of channel (contra/ipsi target-channel relationship) is meaningful, then observed value should be in the higher 5% of the distribution of permuted means. The dashed line marks the probability of the original mean within the distribution of permuted means. The number next to the line shows the probability of the original mean within the distribution of permuted means.
+
+SPCN:
+The results of the permutation tests show low probability of meaningful negativity in all conditions of Experiment 1. In Experiment 2, probability of < 5% was found for the Salient Target conditions following both cue types, but not for the other conditions (0.06 for No Distractor following a Valid cue).
+
+RLpcN:
+Experiment 1 - probability of < 5% was found for the Lateral Target and No Distractor conditions following a neutral cue in both segments. 
+Experiment 2 - in the first segment, probability of < 5% was found for the Lateral Target and Salient Target conditions following a neutral cue (Lateral Target following a valid cue = 0.06). In the second segment, probability of < 5% was found for all conditions following a valid cue and for the No Distractor and Salient Target conditions following a neutral cue (Lateral Target = 0.06) 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(tidyr)
+```
+```{r permutation function, echo=FALSE}
+#permutation function
+permutFun <- function(condition){
+	exp_n <- length(condition$amplitude)/2
+	perm_mean <- vector("list",100000)
+	for (i in 1:100000) {
+		perm_mean[i]<- mean(sample(condition$amplitude,size=exp_n,replace=F)) #sampling from the combined pool the same number of draws as in the original pool, and calculating a mean for each sample
+	}
+	df <- data.frame(area=unlist(perm_mean))
+	mean_p <- mean(condition$amplitude[1:exp_n]) #calculating the real mean from the first half of the dataset
+	probs <- sum(df$area < mean_p)/100000 #calculating the probability of getting means smaller than the real mean in the distribution of permutations
+	ggplot(df, aes(x=area)) +
+		geom_histogram(color="black", fill="green", alpha=.4, binwidth = 5) +
+		geom_vline(color="navy",lwd=1,lty=2,xintercept = mean_p) +
+		theme_classic() +
+		ylab("Frequency")+
+		xlab(expression("Area ("*mu*"Vms)")) +
+		annotate("text",x = mean_p-10, y = 2000, label = probs)
+}
+
+```
+
+```{r SPCN datasets, echo=FALSE, warning=FALSE, message=FALSE}
+#Experiment 1
+#loading and preparing data
+setwd("~/Desktop/MAC_project/Exp1/EEG/DW")
+e1_SPCN_LT_V <- read.delim("SPCN_Valid_LateralTarget_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_LT_V_I <- read.delim("SPCN_Valid_LateralTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e1_SPCN_ND_V <- read.delim("SPCN_Valid_NoDist_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_ND_V_I <- read.delim("SPCN_Valid_NoDist_300-500_Positive.txt",header=TRUE,sep = "")
+e1_SPCN_ST_V <- read.delim("SPCN_Valid_SalientTarget_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_ST_V_I <- read.delim("SPCN_Valid_SalientTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e1_SPCN_LT_N <- read.delim("SPCN_Neutral_LateralTarget_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_LT_N_I <- read.delim("SPCN_Neutral_LateralTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e1_SPCN_ND_N <- read.delim("SPCN_Neutral_NoDist_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_ND_N_I <- read.delim("SPCN_Neutral_NoDist_300-500_Positive.txt",header=TRUE,sep = "")
+e1_SPCN_ST_N <- read.delim("SPCN_Neutral_SalientTarget_300-500.txt",header=TRUE,sep = "")
+e1_SPCN_ST_N_I <- read.delim("SPCN_Neutral_SalientTarget_300-500_Positive.txt",header=TRUE,sep = "")
+
+names(e1_SPCN_LT_V)[2] <- "amplitude"
+names(e1_SPCN_LT_V_I)[2] <- "amplitude"
+names(e1_SPCN_ND_V)[2] <- "amplitude"
+names(e1_SPCN_ND_V_I)[2] <- "amplitude"
+names(e1_SPCN_ST_V)[2] <- "amplitude"
+names(e1_SPCN_ST_V_I)[2] <- "amplitude"
+names(e1_SPCN_LT_N)[2] <- "amplitude"
+names(e1_SPCN_LT_N_I)[2] <- "amplitude"
+names(e1_SPCN_ND_N)[2] <- "amplitude"
+names(e1_SPCN_ND_N_I)[2] <- "amplitude"
+names(e1_SPCN_ST_N)[2] <- "amplitude"
+names(e1_SPCN_ST_N_I)[2] <- "amplitude"
+
+#converting positive to negative values
+e1_SPCN_LT_V_I$amplitude <- e1_SPCN_LT_V_I$amplitude*(-1)
+e1_SPCN_ND_V_I$amplitude <- e1_SPCN_ND_V_I$amplitude*(-1)
+e1_SPCN_ST_V_I$amplitude <- e1_SPCN_ST_V_I$amplitude*(-1)
+e1_SPCN_LT_N_I$amplitude <- e1_SPCN_LT_N_I$amplitude*(-1)
+e1_SPCN_ND_N_I$amplitude <- e1_SPCN_ND_N_I$amplitude*(-1)
+e1_SPCN_ST_N_I$amplitude <- e1_SPCN_ST_N_I$amplitude*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e1_SPCN_LT_V_pooled <- rbind(select(e1_SPCN_LT_V,amplitude),select(e1_SPCN_LT_V_I,amplitude))
+e1_SPCN_ND_V_pooled <- rbind(select(e1_SPCN_ND_V,amplitude),select(e1_SPCN_ND_V_I,amplitude))
+e1_SPCN_ST_V_pooled <- rbind(select(e1_SPCN_ST_V,amplitude),select(e1_SPCN_ST_V_I,amplitude))
+e1_SPCN_LT_N_pooled <- rbind(select(e1_SPCN_LT_N,amplitude),select(e1_SPCN_LT_N_I,amplitude))
+e1_SPCN_ND_N_pooled <- rbind(select(e1_SPCN_ND_N,amplitude),select(e1_SPCN_ND_N_I,amplitude))
+e1_SPCN_ST_N_pooled <- rbind(select(e1_SPCN_ST_N,amplitude),select(e1_SPCN_ST_N_I,amplitude))
+
+#Experiment 2
+#loading and preparing data
+setwd("~/Desktop/MAC_project/Exp1a/EEG/DW")
+e2_SPCN_LT_V <- read.delim("SPCN_Valid_LateralTarget_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_LT_V_I <- read.delim("SPCN_Valid_LateralTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e2_SPCN_ND_V <- read.delim("SPCN_Valid_NoDist_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_ND_V_I <- read.delim("SPCN_Valid_NoDist_300-500_Positive.txt",header=TRUE,sep = "")
+e2_SPCN_ST_V <- read.delim("SPCN_Valid_SalientTarget_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_ST_V_I <- read.delim("SPCN_Valid_SalientTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e2_SPCN_LT_N <- read.delim("SPCN_Neutral_LateralTarget_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_LT_N_I <- read.delim("SPCN_Neutral_LateralTarget_300-500_Positive.txt",header=TRUE,sep = "")
+e2_SPCN_ND_N <- read.delim("SPCN_Neutral_NoDist_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_ND_N_I <- read.delim("SPCN_Neutral_NoDist_300-500_Positive.txt",header=TRUE,sep = "")
+e2_SPCN_ST_N <- read.delim("SPCN_Neutral_SalientTarget_300-500.txt",header=TRUE,sep = "")
+e2_SPCN_ST_N_I <- read.delim("SPCN_Neutral_SalientTarget_300-500_Positive.txt",header=TRUE,sep = "")
+
+names(e2_SPCN_LT_V)[2] <- "amplitude"
+names(e2_SPCN_LT_V_I)[2] <- "amplitude"
+names(e2_SPCN_ND_V)[2] <- "amplitude"
+names(e2_SPCN_ND_V_I)[2] <- "amplitude"
+names(e2_SPCN_ST_V)[2] <- "amplitude"
+names(e2_SPCN_ST_V_I)[2] <- "amplitude"
+names(e2_SPCN_LT_N)[2] <- "amplitude"
+names(e2_SPCN_LT_N_I)[2] <- "amplitude"
+names(e2_SPCN_ND_N)[2] <- "amplitude"
+names(e2_SPCN_ND_N_I)[2] <- "amplitude"
+names(e2_SPCN_ST_N)[2] <- "amplitude"
+names(e2_SPCN_ST_N_I)[2] <- "amplitude"
+
+#converting positive to negative values
+e2_SPCN_LT_V_I$amplitude <- e2_SPCN_LT_V_I$amplitude*(-1)
+e2_SPCN_ND_V_I$amplitude <- e2_SPCN_ND_V_I$amplitude*(-1)
+e2_SPCN_ST_V_I$amplitude <- e2_SPCN_ST_V_I$amplitude*(-1)
+e2_SPCN_LT_N_I$amplitude <- e2_SPCN_LT_N_I$amplitude*(-1)
+e2_SPCN_ND_N_I$amplitude <- e2_SPCN_ND_N_I$amplitude*(-1)
+e2_SPCN_ST_N_I$amplitude <- e2_SPCN_ST_N_I$amplitude*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e2_SPCN_LT_V_pooled <- rbind(select(e2_SPCN_LT_V,amplitude),select(e2_SPCN_LT_V_I,amplitude))
+e2_SPCN_ND_V_pooled <- rbind(select(e2_SPCN_ND_V,amplitude),select(e2_SPCN_ND_V_I,amplitude))
+e2_SPCN_ST_V_pooled <- rbind(select(e2_SPCN_ST_V,amplitude),select(e2_SPCN_ST_V_I,amplitude))
+e2_SPCN_LT_N_pooled <- rbind(select(e2_SPCN_LT_N,amplitude),select(e2_SPCN_LT_N_I,amplitude))
+e2_SPCN_ND_N_pooled <- rbind(select(e2_SPCN_ND_N,amplitude),select(e2_SPCN_ND_N_I,amplitude))
+e2_SPCN_ST_N_pooled <- rbind(select(e2_SPCN_ST_N,amplitude),select(e2_SPCN_ST_N_I,amplitude))
+
+```
+
+permutation tests - SPCN experiment 1
+
+```{r permutations SPCN e1, echo=FALSE, warning=FALSE, message=FALSE}
+
+e1_SPCN_pooled_conditions <- list(e1_SPCN_LT_V_pooled,e1_SPCN_ND_V_pooled,e1_SPCN_ST_V_pooled,e1_SPCN_LT_N_pooled,e1_SPCN_ND_N_pooled,e1_SPCN_ST_N_pooled)
+e1_SPCN_pooled_names <- c("SPCN, Lateral Target, Valid Cue","SPCN, No Distractor, Valid Cue","SPCN, Salient Target, Valid Cue","SPCN, Lateral Target, Neutral Cue","SPCN, No Distractor, Neutral Cue","SPCN, Salient Target, Neutral Cue")
+names(e1_SPCN_pooled_conditions) <- e1_SPCN_pooled_names
+e1_perm_results_SPCN <- lapply(e1_SPCN_pooled_conditions, permutFun)
+
+e1_perm_results_SPCN 
+
+```
+
+permutation tests - SPCN experiment 2
+
+```{r permutations SPCN e2, echo=FALSE, warning=FALSE, message=FALSE}
+
+e2_SPCN_pooled_conditions <- list(e2_SPCN_LT_V_pooled,e2_SPCN_ND_V_pooled,e2_SPCN_ST_V_pooled,e2_SPCN_LT_N_pooled,e2_SPCN_ND_N_pooled,e2_SPCN_ST_N_pooled)
+e2_SPCN_pooled_names <- c("SPCN, Lateral Target, Valid Cue","SPCN, No Distractor, Valid Cue","SPCN, Salient Target, Valid Cue","SPCN, Lateral Target, Neutral Cue","SPCN, No Distractor, Neutral Cue","SPCN, Salient Target, Neutral Cue")
+names(e2_SPCN_pooled_conditions) <- e2_SPCN_pooled_names
+e2_perm_results_SPCN <- lapply(e2_SPCN_pooled_conditions, permutFun)
+
+e2_perm_results_SPCN 
+
+```
+
+```{r RLpcN datasets, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#loading data
+#Experiment 1
+setwd("~/Desktop/MAC_project/Exp1/EEG/DW")
+e1_RLpcN_LT_V <- read.delim("rlocked_AllCorrValidCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_V_I <- read.delim("RLpcN_Valid_DistrV_600_P.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_V <- read.delim("rlocked_AllCorrValidCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_V_I <- read.delim("RLpcN_Valid_NoDist_600_P.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_V <- read.delim("rlocked_AllCorrValidCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_V_I <- read.delim("RLpcN_Valid_SalientTarget_600_P.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_N <- read.delim("rlocked_AllCorrNeutralCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_N_I <- read.delim("RLpcN_Neutral_DistrV_600_P.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_N <- read.delim("rlocked_AllCorrNeutralCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_N_I <- read.delim("RLpcN_Neutral_NoDist_600_P.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_N <- read.delim("rlocked_AllCorrNeutralCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_N_I <- read.delim("RLpcN_Neutral_SalientTarget_600_P.txt",header=TRUE,sep = "")
+
+names(e1_RLpcN_LT_V)[2] <- "amplitude"
+names(e1_RLpcN_LT_V_I)[2] <- "amplitude"
+names(e1_RLpcN_ND_V)[2] <- "amplitude"
+names(e1_RLpcN_ND_V_I)[2] <- "amplitude"
+names(e1_RLpcN_ST_V)[2] <- "amplitude"
+names(e1_RLpcN_ST_V_I)[2] <- "amplitude"
+names(e1_RLpcN_LT_N)[2] <- "amplitude"
+names(e1_RLpcN_LT_N_I)[2] <- "amplitude"
+names(e1_RLpcN_ND_N)[2] <- "amplitude"
+names(e1_RLpcN_ND_N_I)[2] <- "amplitude"
+names(e1_RLpcN_ST_N)[2] <- "amplitude"
+names(e1_RLpcN_ST_N_I)[2] <- "amplitude"
+
+#converting positive to negative values
+e1_RLpcN_LT_V_I$amplitude <- e1_RLpcN_LT_V_I$amplitude*(-1)
+e1_RLpcN_ND_V_I$amplitude <- e1_RLpcN_ND_V_I$amplitude*(-1)
+e1_RLpcN_ST_V_I$amplitude <- e1_RLpcN_ST_V_I$amplitude*(-1)
+e1_RLpcN_LT_N_I$amplitude <- e1_RLpcN_LT_N_I$amplitude*(-1)
+e1_RLpcN_ND_N_I$amplitude <- e1_RLpcN_ND_N_I$amplitude*(-1)
+e1_RLpcN_ST_N_I$amplitude <- e1_RLpcN_ST_N_I$amplitude*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e1_RLpcN_LT_V_pooled <- rbind(select(e1_RLpcN_LT_V,amplitude),select(e1_RLpcN_LT_V_I,amplitude))
+e1_RLpcN_ND_V_pooled <- rbind(select(e1_RLpcN_ND_V,amplitude),select(e1_RLpcN_ND_V_I,amplitude))
+e1_RLpcN_ST_V_pooled <- rbind(select(e1_RLpcN_ST_V,amplitude),select(e1_RLpcN_ST_V_I,amplitude))
+e1_RLpcN_LT_N_pooled <- rbind(select(e1_RLpcN_LT_N,amplitude),select(e1_RLpcN_LT_N_I,amplitude))
+e1_RLpcN_ND_N_pooled <- rbind(select(e1_RLpcN_ND_N,amplitude),select(e1_RLpcN_ND_N_I,amplitude))
+e1_RLpcN_ST_N_pooled <- rbind(select(e1_RLpcN_ST_N,amplitude),select(e1_RLpcN_ST_N_I,amplitude))
+
+#Experiment 2
+setwd("~/Desktop/MAC_project/Exp1a/EEG/DW")
+e2_RLpcN_LT_V <- read.delim("rlocked_AllCorrValidCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_V_I <- read.delim("RLpcN_Valid_DistrV_600_P.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_V <- read.delim("rlocked_AllCorrValidCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_V_I <- read.delim("RLpcN_Valid_NoDist_600_P.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_V <- read.delim("rlocked_AllCorrValidCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_V_I <- read.delim("RLpcN_Valid_SalientTarget_600_P.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_N <- read.delim("rlocked_AllCorrNeutralCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_N_I <- read.delim("RLpcN_Neutral_DistrV_600_P.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_N <- read.delim("rlocked_AllCorrNeutralCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_N_I <- read.delim("RLpcN_Neutral_NoDist_600_P.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_N <- read.delim("rlocked_AllCorrNeutralCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_N_I <- read.delim("RLpcN_Neutral_SalientTarget_600_P.txt",header=TRUE,sep = "")
+
+names(e2_RLpcN_LT_V)[2] <- "amplitude"
+names(e2_RLpcN_LT_V_I)[2] <- "amplitude"
+names(e2_RLpcN_ND_V)[2] <- "amplitude"
+names(e2_RLpcN_ND_V_I)[2] <- "amplitude"
+names(e2_RLpcN_ST_V)[2] <- "amplitude"
+names(e2_RLpcN_ST_V_I)[2] <- "amplitude"
+names(e2_RLpcN_LT_N)[2] <- "amplitude"
+names(e2_RLpcN_LT_N_I)[2] <- "amplitude"
+names(e2_RLpcN_ND_N)[2] <- "amplitude"
+names(e2_RLpcN_ND_N_I)[2] <- "amplitude"
+names(e2_RLpcN_ST_N)[2] <- "amplitude"
+names(e2_RLpcN_ST_N_I)[2] <- "amplitude"
+
+#converting positive to negative values
+e2_RLpcN_LT_V_I$amplitude <- e2_RLpcN_LT_V_I$amplitude*(-1)
+e2_RLpcN_ND_V_I$amplitude <- e2_RLpcN_ND_V_I$amplitude*(-1)
+e2_RLpcN_ST_V_I$amplitude <- e2_RLpcN_ST_V_I$amplitude*(-1)
+e2_RLpcN_LT_N_I$amplitude <- e2_RLpcN_LT_N_I$amplitude*(-1)
+e2_RLpcN_ND_N_I$amplitude <- e2_RLpcN_ND_N_I$amplitude*(-1)
+e2_RLpcN_ST_N_I$amplitude <- e2_RLpcN_ST_N_I$amplitude*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e2_RLpcN_LT_V_pooled <- rbind(select(e2_RLpcN_LT_V,amplitude),select(e2_RLpcN_LT_V_I,amplitude))
+e2_RLpcN_ND_V_pooled <- rbind(select(e2_RLpcN_ND_V,amplitude),select(e2_RLpcN_ND_V_I,amplitude))
+e2_RLpcN_ST_V_pooled <- rbind(select(e2_RLpcN_ST_V,amplitude),select(e2_RLpcN_ST_V_I,amplitude))
+e2_RLpcN_LT_N_pooled <- rbind(select(e2_RLpcN_LT_N,amplitude),select(e2_RLpcN_LT_N_I,amplitude))
+e2_RLpcN_ND_N_pooled <- rbind(select(e2_RLpcN_ND_N,amplitude),select(e2_RLpcN_ND_N_I,amplitude))
+e2_RLpcN_ST_N_pooled <- rbind(select(e2_RLpcN_ST_N,amplitude),select(e2_RLpcN_ST_N_I,amplitude))
+
+```
+
+```{r RLpcN datasets 2 seg, message=FALSE, warning=FALSE}
+#loading data
+#Experiment 1
+setwd("~/Desktop/MAC_project/Exp1/EEG/DW")
+e1_RLpcN_LT_V <- read.delim("rlocked_AllCorrValidCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_V_I <- read.delim("RLpcN_Valid_LateralTarget_2segP.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_V <- read.delim("rlocked_AllCorrValidCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_V_I <- read.delim("RLpcN_Valid_NoDist_2segP.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_V <- read.delim("rlocked_AllCorrValidCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_V_I <- read.delim("RLpcN_Valid_SalientTarget_2segP.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_N <- read.delim("rlocked_AllCorrNeutralCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_LT_N_I <- read.delim("RLpcN_Neutral_LateralTarget_2segP.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_N <- read.delim("rlocked_AllCorrNeutralCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ND_N_I <- read.delim("RLpcN_Neutral_NoDist_2segP.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_N <- read.delim("rlocked_AllCorrNeutralCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e1_RLpcN_ST_N_I <- read.delim("RLpcN_Neutral_SalientTarget_2segP.txt",header=TRUE,sep = "")
+##amplitude1 = amplitude of early RLpcN portion, amplitude2 = amplitude of ##late RLpcN portion
+names(e1_RLpcN_LT_V)[2] <- "amplitude1"
+names(e1_RLpcN_LT_V_I)[2] <- "amplitude1"
+names(e1_RLpcN_ND_V)[2] <- "amplitude1"
+names(e1_RLpcN_ND_V_I)[2] <- "amplitude1"
+names(e1_RLpcN_ST_V)[2] <- "amplitude1"
+names(e1_RLpcN_ST_V_I)[2] <- "amplitude1"
+names(e1_RLpcN_LT_N)[2] <- "amplitude1"
+names(e1_RLpcN_LT_N_I)[2] <- "amplitude1"
+names(e1_RLpcN_ND_N)[2] <- "amplitude1"
+names(e1_RLpcN_ND_N_I)[2] <- "amplitude1"
+names(e1_RLpcN_ST_N)[2] <- "amplitude1"
+names(e1_RLpcN_ST_N_I)[2] <- "amplitude1"
+
+names(e1_RLpcN_LT_V)[3] <- "amplitude2"
+names(e1_RLpcN_LT_V_I)[3] <- "amplitude2"
+names(e1_RLpcN_ND_V)[3] <- "amplitude2"
+names(e1_RLpcN_ND_V_I)[3] <- "amplitude2"
+names(e1_RLpcN_ST_V)[3] <- "amplitude2"
+names(e1_RLpcN_ST_V_I)[3] <- "amplitude2"
+names(e1_RLpcN_LT_N)[3] <- "amplitude2"
+names(e1_RLpcN_LT_N_I)[3] <- "amplitude2"
+names(e1_RLpcN_ND_N)[3] <- "amplitude2"
+names(e1_RLpcN_ND_N_I)[3] <- "amplitude2"
+names(e1_RLpcN_ST_N)[3] <- "amplitude2"
+names(e1_RLpcN_ST_N_I)[3] <- "amplitude2"
+
+#converting positive to negative values
+e1_RLpcN_LT_V_I$amplitude1 <- e1_RLpcN_LT_V_I$amplitude1*(-1)
+e1_RLpcN_ND_V_I$amplitude1 <- e1_RLpcN_ND_V_I$amplitude1*(-1)
+e1_RLpcN_ST_V_I$amplitude1 <- e1_RLpcN_ST_V_I$amplitude1*(-1)
+e1_RLpcN_LT_N_I$amplitude1 <- e1_RLpcN_LT_N_I$amplitude1*(-1)
+e1_RLpcN_ND_N_I$amplitude1 <- e1_RLpcN_ND_N_I$amplitude1*(-1)
+e1_RLpcN_ST_N_I$amplitude1 <- e1_RLpcN_ST_N_I$amplitude1*(-1)
+
+e1_RLpcN_LT_V_I$amplitude2 <- e1_RLpcN_LT_V_I$amplitude2*(-1)
+e1_RLpcN_ND_V_I$amplitude2 <- e1_RLpcN_ND_V_I$amplitude2*(-1)
+e1_RLpcN_ST_V_I$amplitude2 <- e1_RLpcN_ST_V_I$amplitude2*(-1)
+e1_RLpcN_LT_N_I$amplitude2 <- e1_RLpcN_LT_N_I$amplitude2*(-1)
+e1_RLpcN_ND_N_I$amplitude2 <- e1_RLpcN_ND_N_I$amplitude2*(-1)
+e1_RLpcN_ST_N_I$amplitude2 <- e1_RLpcN_ST_N_I$amplitude2*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e1_RLpcN_LT_V_pooled_1 <- rbind(select(e1_RLpcN_LT_V,amplitude1),select(e1_RLpcN_LT_V_I,amplitude1))
+e1_RLpcN_ND_V_pooled_1 <- rbind(select(e1_RLpcN_ND_V,amplitude1),select(e1_RLpcN_ND_V_I,amplitude1))
+e1_RLpcN_ST_V_pooled_1 <- rbind(select(e1_RLpcN_ST_V,amplitude1),select(e1_RLpcN_ST_V_I,amplitude1))
+e1_RLpcN_LT_N_pooled_1 <- rbind(select(e1_RLpcN_LT_N,amplitude1),select(e1_RLpcN_LT_N_I,amplitude1))
+e1_RLpcN_ND_N_pooled_1 <- rbind(select(e1_RLpcN_ND_N,amplitude1),select(e1_RLpcN_ND_N_I,amplitude1))
+e1_RLpcN_ST_N_pooled_1 <- rbind(select(e1_RLpcN_ST_N,amplitude1),select(e1_RLpcN_ST_N_I,amplitude1))
+
+e1_RLpcN_LT_V_pooled_2 <- rbind(select(e1_RLpcN_LT_V,amplitude2),select(e1_RLpcN_LT_V_I,amplitude2))
+e1_RLpcN_ND_V_pooled_2 <- rbind(select(e1_RLpcN_ND_V,amplitude2),select(e1_RLpcN_ND_V_I,amplitude2))
+e1_RLpcN_ST_V_pooled_2 <- rbind(select(e1_RLpcN_ST_V,amplitude2),select(e1_RLpcN_ST_V_I,amplitude2))
+e1_RLpcN_LT_N_pooled_2 <- rbind(select(e1_RLpcN_LT_N,amplitude2),select(e1_RLpcN_LT_N_I,amplitude2))
+e1_RLpcN_ND_N_pooled_2 <- rbind(select(e1_RLpcN_ND_N,amplitude2),select(e1_RLpcN_ND_N_I,amplitude2))
+e1_RLpcN_ST_N_pooled_2 <- rbind(select(e1_RLpcN_ST_N,amplitude2),select(e1_RLpcN_ST_N_I,amplitude2))
+
+#Experiment 2
+setwd("~/Desktop/MAC_project/Exp1a/EEG/DW")
+e2_RLpcN_LT_V <- read.delim("rlocked_AllCorrValidCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_V_I <- read.delim("RLpcN_Valid_LateralTarget_2segP.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_V <- read.delim("rlocked_AllCorrValidCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_V_I <- read.delim("RLpcN_Valid_NoDist_2segP.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_V <- read.delim("rlocked_AllCorrValidCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_V_I <- read.delim("RLpcN_Valid_SalientTarget_2segP.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_N <- read.delim("rlocked_AllCorrNeutralCues_DistrV_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_LT_N_I <- read.delim("RLpcN_Neutral_LateralTarget_2segP.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_N <- read.delim("rlocked_AllCorrNeutralCues_NoDist_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ND_N_I <- read.delim("RLpcN_Neutral_NoDist_2segP.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_N <- read.delim("rlocked_AllCorrNeutralCues_SalientTarget_TargBL_avg_LRP_Peaks_600N.txt",header=TRUE,sep = "")
+e2_RLpcN_ST_N_I <- read.delim("RLpcN_Neutral_SalientTarget_2segP.txt",header=TRUE,sep = "")
+##amplitude1 = amplitude of early RLpcN portion, amplitude2 = amplitude of ##late RLpcN portion
+names(e2_RLpcN_LT_V)[2] <- "amplitude1"
+names(e2_RLpcN_LT_V_I)[2] <- "amplitude1"
+names(e2_RLpcN_ND_V)[2] <- "amplitude1"
+names(e2_RLpcN_ND_V_I)[2] <- "amplitude1"
+names(e2_RLpcN_ST_V)[2] <- "amplitude1"
+names(e2_RLpcN_ST_V_I)[2] <- "amplitude1"
+names(e2_RLpcN_LT_N)[2] <- "amplitude1"
+names(e2_RLpcN_LT_N_I)[2] <- "amplitude1"
+names(e2_RLpcN_ND_N)[2] <- "amplitude1"
+names(e2_RLpcN_ND_N_I)[2] <- "amplitude1"
+names(e2_RLpcN_ST_N)[2] <- "amplitude1"
+names(e2_RLpcN_ST_N_I)[2] <- "amplitude1"
+
+names(e2_RLpcN_LT_V)[3] <- "amplitude2"
+names(e2_RLpcN_LT_V_I)[3] <- "amplitude2"
+names(e2_RLpcN_ND_V)[3] <- "amplitude2"
+names(e2_RLpcN_ND_V_I)[3] <- "amplitude2"
+names(e2_RLpcN_ST_V)[3] <- "amplitude2"
+names(e2_RLpcN_ST_V_I)[3] <- "amplitude2"
+names(e2_RLpcN_LT_N)[3] <- "amplitude2"
+names(e2_RLpcN_LT_N_I)[3] <- "amplitude2"
+names(e2_RLpcN_ND_N)[3] <- "amplitude2"
+names(e2_RLpcN_ND_N_I)[3] <- "amplitude2"
+names(e2_RLpcN_ST_N)[3] <- "amplitude2"
+names(e2_RLpcN_ST_N_I)[3] <- "amplitude2"
+
+#converting positive to negative values
+e2_RLpcN_LT_V_I$amplitude1 <- e2_RLpcN_LT_V_I$amplitude1*(-1)
+e2_RLpcN_ND_V_I$amplitude1 <- e2_RLpcN_ND_V_I$amplitude1*(-1)
+e2_RLpcN_ST_V_I$amplitude1 <- e2_RLpcN_ST_V_I$amplitude1*(-1)
+e2_RLpcN_LT_N_I$amplitude1 <- e2_RLpcN_LT_N_I$amplitude1*(-1)
+e2_RLpcN_ND_N_I$amplitude1 <- e2_RLpcN_ND_N_I$amplitude1*(-1)
+e2_RLpcN_ST_N_I$amplitude1 <- e2_RLpcN_ST_N_I$amplitude1*(-1)
+
+e2_RLpcN_LT_V_I$amplitude2 <- e2_RLpcN_LT_V_I$amplitude2*(-1)
+e2_RLpcN_ND_V_I$amplitude2 <- e2_RLpcN_ND_V_I$amplitude2*(-1)
+e2_RLpcN_ST_V_I$amplitude2 <- e2_RLpcN_ST_V_I$amplitude2*(-1)
+e2_RLpcN_LT_N_I$amplitude2 <- e2_RLpcN_LT_N_I$amplitude2*(-1)
+e2_RLpcN_ND_N_I$amplitude2 <- e2_RLpcN_ND_N_I$amplitude2*(-1)
+e2_RLpcN_ST_N_I$amplitude2 <- e2_RLpcN_ST_N_I$amplitude2*(-1)
+
+#combining real (contra-ipsi) and inverted (ipsi-contra) values into one pool for sampling
+e2_RLpcN_LT_V_pooled_1 <- rbind(select(e2_RLpcN_LT_V,amplitude1),select(e2_RLpcN_LT_V_I,amplitude1))
+e2_RLpcN_ND_V_pooled_1 <- rbind(select(e2_RLpcN_ND_V,amplitude1),select(e2_RLpcN_ND_V_I,amplitude1))
+e2_RLpcN_ST_V_pooled_1 <- rbind(select(e2_RLpcN_ST_V,amplitude1),select(e2_RLpcN_ST_V_I,amplitude1))
+e2_RLpcN_LT_N_pooled_1 <- rbind(select(e2_RLpcN_LT_N,amplitude1),select(e2_RLpcN_LT_N_I,amplitude1))
+e2_RLpcN_ND_N_pooled_1 <- rbind(select(e2_RLpcN_ND_N,amplitude1),select(e2_RLpcN_ND_N_I,amplitude1))
+e2_RLpcN_ST_N_pooled_1 <- rbind(select(e2_RLpcN_ST_N,amplitude1),select(e2_RLpcN_ST_N_I,amplitude1))
+
+e2_RLpcN_LT_V_pooled_2 <- rbind(select(e2_RLpcN_LT_V,amplitude2),select(e2_RLpcN_LT_V_I,amplitude2))
+e2_RLpcN_ND_V_pooled_2 <- rbind(select(e2_RLpcN_ND_V,amplitude2),select(e2_RLpcN_ND_V_I,amplitude2))
+e2_RLpcN_ST_V_pooled_2 <- rbind(select(e2_RLpcN_ST_V,amplitude2),select(e2_RLpcN_ST_V_I,amplitude2))
+e2_RLpcN_LT_N_pooled_2 <- rbind(select(e2_RLpcN_LT_N,amplitude2),select(e2_RLpcN_LT_N_I,amplitude2))
+e2_RLpcN_ND_N_pooled_2 <- rbind(select(e2_RLpcN_ND_N,amplitude2),select(e2_RLpcN_ND_N_I,amplitude2))
+e2_RLpcN_ST_N_pooled_2 <- rbind(select(e2_RLpcN_ST_N,amplitude2),select(e2_RLpcN_ST_N_I,amplitude2))
+
+```
+
+permutation tests - RLpcN experiment 1
+
+```{r permutations RLpcN e1, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+# e1_RLpcN_pooled_conditions <- list(e1_RLpcN_LT_V_pooled,e1_RLpcN_ND_V_pooled,e1_RLpcN_ST_V_pooled,e1_RLpcN_LT_N_pooled,e1_RLpcN_ND_N_pooled,e1_RLpcN_ST_N_pooled)
+# e1_RLpcN_pooled_names <- c("RLpcN, Lateral Target, Valid Cue","RLpcN, No Distractor, Valid Cue","RLpcN, Salient Target, Valid Cue","RLpcN, Lateral Target, Neutral Cue","RLpcN, No Distractor, Neutral Cue","RLpcN, Salient Target, Neutral Cue")
+# names(e1_RLpcN_pooled_conditions) <- e1_RLpcN_pooled_names
+# e1_perm_results_RLpcN <- lapply(e1_RLpcN_pooled_conditions, permutFun)
+# 
+# e1_perm_results_RLpcN
+
+```
+
+```{r permutations RLpcN e1 2 seg, echo=FALSE, warning=FALSE, message=FALSE}
+
+e1_RLpcN_pooled_conditions <- list(e1_RLpcN_LT_V_pooled_1,e1_RLpcN_ND_V_pooled_1,e1_RLpcN_ST_V_pooled_1,e1_RLpcN_LT_N_pooled_1,e1_RLpcN_ND_N_pooled_1,e1_RLpcN_ST_N_pooled_1,e1_RLpcN_LT_V_pooled_2,e1_RLpcN_ND_V_pooled_2,e1_RLpcN_ST_V_pooled_2,e1_RLpcN_LT_N_pooled_2,e1_RLpcN_ND_N_pooled_2,e1_RLpcN_ST_N_pooled_2)
+e1_RLpcN_pooled_names <- c("RLpcN, Lateral Target, Valid Cue, 1st","RLpcN, No Distractor, Valid Cue, 1st","RLpcN, Salient Target, Valid Cue, 1st","RLpcN, Lateral Target, Neutral Cue, 1st","RLpcN, No Distractor, Neutral Cue, 1st","RLpcN, Salient Target, Neutral Cue, 1st","RLpcN, Lateral Target, Valid Cue, 2nd","RLpcN, No Distractor, Valid Cue, 2nd","RLpcN, Salient Target, Valid Cue, 2nd","RLpcN, Lateral Target, Neutral Cue, 2nd","RLpcN, No Distractor, Neutral Cue, 2nd","RLpcN, Salient Target, Neutral Cue, 2nd")
+names(e1_RLpcN_pooled_conditions) <- e1_RLpcN_pooled_names
+e1_perm_results_RLpcN <- lapply(e1_RLpcN_pooled_conditions, permutFun)
+
+e1_perm_results_RLpcN
+
+```
+permutation tests - RLpcN experiment 2
+
+```{r permutations RLpcN e2, eval=FALSE, warning=FALSE, include=FALSE}
+
+e2_RLpcN_pooled_conditions <- list(e2_RLpcN_LT_V_pooled,e2_RLpcN_ND_V_pooled,e2_RLpcN_ST_V_pooled,e2_RLpcN_LT_N_pooled,e2_RLpcN_ND_N_pooled,e2_RLpcN_ST_N_pooled)
+e2_RLpcN_pooled_names <- c("RLpcN, Lateral Target, Valid Cue","RLpcN, No Distractor, Valid Cue","RLpcN, Salient Target, Valid Cue","RLpcN, Lateral Target, Neutral Cue","RLpcN, No Distractor, Neutral Cue","RLpcN, Salient Target, Neutral Cue")
+names(e2_RLpcN_pooled_conditions) <- e2_RLpcN_pooled_names
+e2_perm_results_RLpcN <- lapply(e2_RLpcN_pooled_conditions, permutFun)
+
+e2_perm_results_RLpcN
+
+```
+
+```{r permutations RLpcN e2 2 seg, echo=FALSE, warning=FALSE, message=FALSE}
+
+e2_RLpcN_pooled_conditions <- list(e2_RLpcN_LT_V_pooled_1,e2_RLpcN_ND_V_pooled_1,e2_RLpcN_ST_V_pooled_1,e2_RLpcN_LT_N_pooled_1,e2_RLpcN_ND_N_pooled_1,e2_RLpcN_ST_N_pooled_1,e2_RLpcN_LT_V_pooled_2,e2_RLpcN_ND_V_pooled_2,e2_RLpcN_ST_V_pooled_2,e2_RLpcN_LT_N_pooled_2,e2_RLpcN_ND_N_pooled_2,e2_RLpcN_ST_N_pooled_2)
+e2_RLpcN_pooled_names <- c("RLpcN, Lateral Target, Valid Cue, 1st","RLpcN, No Distractor, Valid Cue, 1st","RLpcN, Salient Target, Valid Cue, 1st","RLpcN, Lateral Target, Neutral Cue, 1st","RLpcN, No Distractor, Neutral Cue, 1st","RLpcN, Salient Target, Neutral Cue, 1st","RLpcN, Lateral Target, Valid Cue, 2nd","RLpcN, No Distractor, Valid Cue, 2nd","RLpcN, Salient Target, Valid Cue, 2nd","RLpcN, Lateral Target, Neutral Cue, 2nd","RLpcN, No Distractor, Neutral Cue, 2nd","RLpcN, Salient Target, Neutral Cue, 2nd")
+names(e2_RLpcN_pooled_conditions) <- e2_RLpcN_pooled_names
+e2_perm_results_RLpcN <- lapply(e2_RLpcN_pooled_conditions, permutFun)
+
+e2_perm_results_RLpcN
+
+```
